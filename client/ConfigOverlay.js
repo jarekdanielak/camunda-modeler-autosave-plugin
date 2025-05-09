@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import React, { useState } from 'camunda-modeler-plugin-helpers/react';
 import { Overlay, Section } from 'camunda-modeler-plugin-helpers/components';
 

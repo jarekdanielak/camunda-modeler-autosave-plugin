@@ -8,7 +8,6 @@
  * except in compliance with the MIT License.
  */
 
-/* eslint-disable no-unused-vars*/
 import React, { Fragment, PureComponent } from 'camunda-modeler-plugin-helpers/react';
 import { Fill } from 'camunda-modeler-plugin-helpers/components';
 
