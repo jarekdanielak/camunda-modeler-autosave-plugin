@@ -8,170 +8,157 @@
  * except in compliance with the MIT License.
  */
 
-import React, { Fragment, PureComponent } from 'camunda-modeler-plugin-helpers/react';
+import React, { useEffect, useState, useRef } from 'camunda-modeler-plugin-helpers/react';
 import { Fill } from 'camunda-modeler-plugin-helpers/components';
-
-import classNames from 'classnames';
 
 import Icon from '../resources/timer.svg';
 
-import ConfigOverlay from './ConfigOverlay';
-
-const defaultState = {
-  enabled: false,
-  interval: 5,
-  configOpen: false
-};
-
 /**
  * An example client extension plugin to enable auto saving functionality
- * into the Camunda Modeler
+ * in the Camunda Modeler
  */
-export default class AutoSavePlugin extends PureComponent {
+export default function AutoSavePlugin(props) {
 
-  constructor(props) {
-    super(props);
-
-    this.state = defaultState;
-
-    this.handleConfigClosed = this.handleConfigClosed.bind(this);
-
-    this._buttonRef = React.createRef();
-
-    this.activeTab = {
-      id: '__empty',
-      type: 'empty'
-    };
-  }
-
-  componentDidMount() {
-
-    /**
-    * The component props include everything the Application offers plugins,
-    * which includes:
+  /**
+    * The component props include APIs the Application offers plugins:
+    *
     * - config: save and retrieve information to the local configuration
-    * - subscribe: hook into application events, like <tab.saved>, <app.activeTabChanged> ...
-    * - triggerAction: execute editor actions, like <save>, <open-diagram> ...
-    * - log: log information into the Log panel
     * - displayNotification: show notifications inside the application
+    * - log: log information into the Log panel
+    * - settings: register and retrieve the application settings
+    * - subscribe: hook into application events, like <tab.saved>, <app.activeTabChanged> etc.
+    * - triggerAction: execute editor actions, like <save>, <open-diagram> etc.
     */
-    const {
-      config,
-      subscribe
-    } = this.props;
+  const {
+    displayNotification,
+    subscribe,
+    settings,
+    triggerAction
+  } = props;
 
-    // retrieve plugin related information from the application configuration
-    config.getForPlugin('autoSave', 'config')
-      .then(config => this.setState(config));
+  const [ enabled, setEnabled ] = useState(false);
+  const [ interval, setInterval ] = useState(5);
 
-    // subscribe to the event when the active tab changed in the application
+  const [ activeTab, setActiveTab ] = useState({});
+
+  const timer = useRef(null);
+
+  /**
+    * Register the plugin settings to enable the user to configure
+    * the auto-save feature in the Modeler settings window.
+    *
+    * Learn more:
+    * - Settings in Camunda Modeler: https://docs.camunda.io/docs/next/components/modeler/desktop-modeler/settings/
+    * - Settings API: https://github.com/camunda/camunda-modeler/blob/main/client/src/app/Settings.js
+  */
+  useEffect(() => {
+    const values = settings.register(pluginSettings);
+
+    setEnabled(values['autoSavePlugin.enabled']);
+    setValidInterval(values['autoSavePlugin.interval']);
+
+    settings.subscribe('autoSavePlugin.enabled', ({ value }) => {
+      setEnabled(value);
+    });
+
+    settings.subscribe('autoSavePlugin.interval', ({ value }) => {
+      setValidInterval(value);
+    });
+
+  }, [ settings ]);
+
+  /**
+   * Use the `subscribe` API to hook into application events.
+   */
+  useEffect(() => {
+
     subscribe('app.activeTabChanged', ({ activeTab }) => {
-      this.clearTimer();
-      this.activeTab = activeTab;
-
-      if (this.state.enabled && activeTab.file && activeTab.file.path) {
-        this.setupTimer();
-      }
+      setActiveTab(activeTab);
     });
 
-    // subscribe to the event when a tab was saved in the application
     subscribe('tab.saved', () => {
-      if (!this.timer && this.state.enabled) {
-        this.setupTimer();
+      if (enabled && !timer.current) {
+        startTimer();
       }
     });
-  }
 
-  componentDidUpdate() {
-    const {
-      configOpen,
-      enabled
-    } = this.state;
+  }, [ subscribe ]);
 
-    if (!enabled || configOpen) {
-      this.clearTimer();
+  useEffect(() => {
+    if (enabled && activeTab?.file?.path) {
+      startTimer();
     }
 
-    if (!this.timer && !configOpen && enabled && this.activeTab.file && this.activeTab.file.path) {
-      this.setupTimer();
+    return () => clearTimer();
+  }, [ activeTab, interval ]);
+
+
+  const startTimer = () => {
+    timer.current = setTimeout(() => {
+      save();
+      startTimer(); // Restart the timer after saving
+    }, interval * 1000);
+  };
+
+  const clearTimer = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
     }
-  }
+  };
 
-  setupTimer() {
-    this.timer = setTimeout(() => {
-      this.save();
-      this.setupTimer();
-    }, this.state.interval * 1000);
-  }
-
-  clearTimer() {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-  }
-
-  save() {
-    const {
-      displayNotification,
-      triggerAction
-    } = this.props;
-
-    // trigger a tab save operation
+  const save = () => {
     triggerAction('save')
       .then(tab => {
         if (!tab) {
           return displayNotification({ title: 'Failed to save' });
         }
       });
-  }
+  };
 
-  handleConfigClosed(newConfig) {
-    this.setState({ configOpen: false });
+  const setValidInterval = (value) => {
+    const num = parseInt(value, 10);
 
-    if (newConfig) {
+    if (isNaN(num) || num <= 0) {
+      displayNotification({
+        title: 'AutoSave Plugin: Invalid interval',
+        type: 'error',
+        content: 'Please enter a valid number greater than 0.'
+      });
 
-      // via <config> it is also possible to save data into the application configuration
-      this.props.config.setForPlugin('autoSave', 'config', newConfig)
-        .catch(console.error);
-
-      this.setState(newConfig);
+      return;
     }
+
+    setInterval(num);
+  };
+
+
+  if (!enabled) {
+    return null;
   }
 
-  /**
-   * render any React component you like to extend the existing
-   * Camunda Modeler application UI
-   */
-  render() {
-    const {
-      configOpen,
-      enabled,
-      interval
-    } = this.state;
-
-    const initValues = {
-      enabled,
-      interval
-    };
-
-    // we can use fills to hook React components into certain places of the UI
-    return <Fragment>
-      <Fill slot="status-bar__app" group="1_autosave">
-        <button
-          ref={ this._buttonRef }
-          className={ classNames('btn', { 'btn--active': configOpen }) }
-          onClick={ () => this.setState({ configOpen: true }) }>
-          <Icon />
-        </button>
-      </Fill>
-      { this.state.configOpen && (
-        <ConfigOverlay
-          anchor={ this._buttonRef.current }
-          onClose={ this.handleConfigClosed }
-          initValues={ initValues }
-        />
-      )}
-    </Fragment>;
-  }
+  // We can a <Fill> component to render into a specific slot in the Modeler UI
+  // Here we render an icon indicating the auto-save is active
+  return (
+    <Fill slot="status-bar__app" group="1_autosave">
+      <button className="btn" title="AutoSave enabled"><Icon /></button>
+    </Fill>
+  );
 }
+
+const pluginSettings = {
+  id: 'autoSavePlugin',
+  title: 'Auto-Save Plugin',
+  properties: {
+    'autoSavePlugin.enabled': {
+      type: 'boolean',
+      default: false,
+      label: 'Enabled'
+    },
+    'autoSavePlugin.interval': {
+      type: 'text',
+      default: '5',
+      label: 'Interval (seconds)',
+    },
+  }
+};
