@@ -15,10 +15,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/react */ "./node_modules/camunda-modeler-plugin-helpers/react.js");
 /* harmony import */ var camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/components */ "./node_modules/camunda-modeler-plugin-helpers/components.js");
-/* harmony import */ var classnames__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! classnames */ "./node_modules/classnames/index.js");
-/* harmony import */ var classnames__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(classnames__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _resources_timer_svg__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../resources/timer.svg */ "./resources/timer.svg");
-/* harmony import */ var _ConfigOverlay__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ConfigOverlay */ "./client/ConfigOverlay.js");
+/* harmony import */ var _resources_timer_svg__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../resources/timer.svg */ "./resources/timer.svg");
 /**
  * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH
  * under one or more contributor license agreements. See the NOTICE file
@@ -33,95 +30,90 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-const defaultState = {
-  enabled: false,
-  interval: 5,
-  configOpen: false
-};
-
 /**
  * An example client extension plugin to enable auto saving functionality
- * into the Camunda Modeler
+ * in the Camunda Modeler
  */
-class AutoSavePlugin extends camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = defaultState;
-    this.handleConfigClosed = this.handleConfigClosed.bind(this);
-    this._buttonRef = camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createRef();
-    this.activeTab = {
-      id: '__empty',
-      type: 'empty'
-    };
-  }
-  componentDidMount() {
-    /**
-    * The component props include everything the Application offers plugins,
-    * which includes:
+function AutoSavePlugin(props) {
+  /**
+    * The component props include APIs the Application offers plugins:
+    *
     * - config: save and retrieve information to the local configuration
-    * - subscribe: hook into application events, like <tab.saved>, <app.activeTabChanged> ...
-    * - triggerAction: execute editor actions, like <save>, <open-diagram> ...
-    * - log: log information into the Log panel
     * - displayNotification: show notifications inside the application
+    * - log: log information into the Log panel
+    * - settings: register and retrieve the application settings
+    * - subscribe: hook into application events, like <tab.saved>, <app.activeTabChanged> etc.
+    * - triggerAction: execute editor actions, like <save>, <open-diagram> etc.
     */
-    const {
-      config,
-      subscribe
-    } = this.props;
+  const {
+    displayNotification,
+    subscribe,
+    settings,
+    triggerAction
+  } = props;
+  const [enabled, setEnabled] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [interval, setInterval] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)(5);
+  const [activeTab, setActiveTab] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+  const timer = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
 
-    // retrieve plugin related information from the application configuration
-    config.getForPlugin('autoSave', 'config').then(config => this.setState(config));
+  /**
+    * Register the plugin settings to enable the user to configure
+    * the auto-save feature in the Modeler settings window.
+    *
+    * Learn more:
+    * - Settings in Camunda Modeler: https://docs.camunda.io/docs/next/components/modeler/desktop-modeler/settings/
+    * - Settings API: https://github.com/camunda/camunda-modeler/blob/main/client/src/app/Settings.js
+  */
+  (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const values = settings.register(pluginSettings);
+    setEnabled(values['autoSavePlugin.enabled']);
+    setValidInterval(values['autoSavePlugin.interval']);
+    settings.subscribe('autoSavePlugin.enabled', ({
+      value
+    }) => {
+      setEnabled(value);
+    });
+    settings.subscribe('autoSavePlugin.interval', ({
+      value
+    }) => {
+      setValidInterval(value);
+    });
+  }, [settings]);
 
-    // subscribe to the event when the active tab changed in the application
+  /**
+   * Use the `subscribe` API to hook into application events.
+   */
+  (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     subscribe('app.activeTabChanged', ({
       activeTab
     }) => {
-      this.clearTimer();
-      this.activeTab = activeTab;
-      if (this.state.enabled && activeTab.file && activeTab.file.path) {
-        this.setupTimer();
-      }
+      setActiveTab(activeTab);
     });
-
-    // subscribe to the event when a tab was saved in the application
     subscribe('tab.saved', () => {
-      if (!this.timer && this.state.enabled) {
-        this.setupTimer();
+      if (enabled && !timer.current) {
+        startTimer();
       }
     });
-  }
-  componentDidUpdate() {
-    const {
-      configOpen,
-      enabled
-    } = this.state;
-    if (!enabled || configOpen) {
-      this.clearTimer();
+  }, [subscribe]);
+  (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (enabled && activeTab?.file?.path) {
+      startTimer();
     }
-    if (!this.timer && !configOpen && enabled && this.activeTab.file && this.activeTab.file.path) {
-      this.setupTimer();
+    return () => clearTimer();
+  }, [activeTab, interval]);
+  const startTimer = () => {
+    timer.current = setTimeout(() => {
+      save();
+      startTimer(); // Restart the timer after saving
+    }, interval * 1000);
+  };
+  const clearTimer = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
     }
-  }
-  setupTimer() {
-    this.timer = setTimeout(() => {
-      this.save();
-      this.setupTimer();
-    }, this.state.interval * 1000);
-  }
-  clearTimer() {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-  }
-  save() {
-    const {
-      displayNotification,
-      triggerAction
-    } = this.props;
-
-    // trigger a tab save operation
+  };
+  const save = () => {
     triggerAction('save').then(tab => {
       if (!tab) {
         return displayNotification({
@@ -129,128 +121,49 @@ class AutoSavePlugin extends camunda_modeler_plugin_helpers_react__WEBPACK_IMPOR
         });
       }
     });
+  };
+  const setValidInterval = value => {
+    const num = parseInt(value, 10);
+    if (isNaN(num) || num <= 0) {
+      displayNotification({
+        title: 'AutoSave Plugin: Invalid interval',
+        type: 'error',
+        content: 'Please enter a valid number greater than 0.'
+      });
+      return;
+    }
+    setInterval(num);
+  };
+  if (!enabled) {
+    return null;
   }
-  handleConfigClosed(newConfig) {
-    this.setState({
-      configOpen: false
-    });
-    if (newConfig) {
-      // via <config> it is also possible to save data into the application configuration
-      this.props.config.setForPlugin('autoSave', 'config', newConfig).catch(console.error);
-      this.setState(newConfig);
+
+  // We can a <Fill> component to render into a specific slot in the Modeler UI
+  // Here we render an icon indicating the auto-save is active
+  return /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Fill, {
+    slot: "status-bar__app",
+    group: "1_autosave"
+  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+    className: "btn",
+    title: "AutoSave enabled"
+  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_resources_timer_svg__WEBPACK_IMPORTED_MODULE_2__["default"], null)));
+}
+const pluginSettings = {
+  id: 'autoSavePlugin',
+  title: 'Auto-Save Plugin',
+  properties: {
+    'autoSavePlugin.enabled': {
+      type: 'boolean',
+      default: false,
+      label: 'Enabled'
+    },
+    'autoSavePlugin.interval': {
+      type: 'text',
+      default: '5',
+      label: 'Interval (seconds)'
     }
   }
-
-  /**
-   * render any React component you like to extend the existing
-   * Camunda Modeler application UI
-   */
-  render() {
-    const {
-      configOpen,
-      enabled,
-      interval
-    } = this.state;
-    const initValues = {
-      enabled,
-      interval
-    };
-
-    // we can use fills to hook React components into certain places of the UI
-    return /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Fill, {
-      slot: "status-bar__app",
-      group: "1_autosave"
-    }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
-      ref: this._buttonRef,
-      className: classnames__WEBPACK_IMPORTED_MODULE_2___default()('btn', {
-        'btn--active': configOpen
-      }),
-      onClick: () => this.setState({
-        configOpen: true
-      })
-    }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_resources_timer_svg__WEBPACK_IMPORTED_MODULE_3__["default"], null))), this.state.configOpen && /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ConfigOverlay__WEBPACK_IMPORTED_MODULE_4__["default"], {
-      anchor: this._buttonRef.current,
-      onClose: this.handleConfigClosed,
-      initValues: initValues
-    }));
-  }
-}
-
-/***/ }),
-
-/***/ "./client/ConfigOverlay.js":
-/*!*********************************!*\
-  !*** ./client/ConfigOverlay.js ***!
-  \*********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ ConfigOverlay)
-/* harmony export */ });
-/* harmony import */ var camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/react */ "./node_modules/camunda-modeler-plugin-helpers/react.js");
-/* harmony import */ var camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/components */ "./node_modules/camunda-modeler-plugin-helpers/components.js");
-
-
-const OFFSET = {
-  right: 0
 };
-
-// we can even use hooks to render into the application
-function ConfigOverlay({
-  anchor,
-  initValues,
-  onClose
-}) {
-  const [enabled, setEnabled] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)(initValues.enabled);
-  const [interval, setAutoSaveInterval] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)(initValues.interval);
-  const onSubmit = () => onClose({
-    enabled,
-    interval
-  });
-
-  // we can use the built-in styles, e.g. by adding "btn btn-primary" class names
-  return /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Overlay, {
-    anchor: anchor,
-    onClose: onClose,
-    offset: OFFSET
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Section, null, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Section.Header, null, "Auto save configuration"), /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Section.Body, null, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("form", {
-    id: "autoSaveConfigForm",
-    onSubmit: onSubmit
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    class: "form-group"
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    class: "custom-control custom-checkbox"
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
-    name: "enabled",
-    className: "custom-control-input",
-    id: "enabled",
-    type: "checkbox",
-    onChange: () => setEnabled(!enabled),
-    value: enabled,
-    defaultChecked: enabled
-  }), /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-    className: "custom-control-label",
-    htmlFor: "enabled"
-  }, "Enabled"))), /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "form-group"
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-    htmlFor: "interval"
-  }, "Interval (seconds)"), /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
-    type: "number",
-    className: "form-control",
-    name: "interval",
-    min: "1",
-    value: interval,
-    onChange: event => setAutoSaveInterval(Number(event.target.value))
-  }))), /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Section.Actions, null, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
-    type: "submit",
-    className: "btn btn-primary",
-    form: "autoSaveConfigForm"
-  }, "Save")))));
-}
 
 /***/ }),
 
@@ -835,75 +748,6 @@ module.exports = window.react;
 
 /***/ }),
 
-/***/ "./node_modules/classnames/index.js":
-/*!******************************************!*\
-  !*** ./node_modules/classnames/index.js ***!
-  \******************************************/
-/***/ ((module, exports) => {
-
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
-	Copyright (c) 2018 Jed Watson.
-	Licensed under the MIT License (MIT), see
-	http://jedwatson.github.io/classnames
-*/
-/* global define */
-
-(function () {
-	'use strict';
-
-	var hasOwn = {}.hasOwnProperty;
-	var nativeCodeString = '[native code]';
-
-	function classNames() {
-		var classes = [];
-
-		for (var i = 0; i < arguments.length; i++) {
-			var arg = arguments[i];
-			if (!arg) continue;
-
-			var argType = typeof arg;
-
-			if (argType === 'string' || argType === 'number') {
-				classes.push(arg);
-			} else if (Array.isArray(arg)) {
-				if (arg.length) {
-					var inner = classNames.apply(null, arg);
-					if (inner) {
-						classes.push(inner);
-					}
-				}
-			} else if (argType === 'object') {
-				if (arg.toString !== Object.prototype.toString && !arg.toString.toString().includes('[native code]')) {
-					classes.push(arg.toString());
-					continue;
-				}
-
-				for (var key in arg) {
-					if (hasOwn.call(arg, key) && arg[key]) {
-						classes.push(key);
-					}
-				}
-			}
-		}
-
-		return classes.join(' ');
-	}
-
-	if ( true && module.exports) {
-		classNames.default = classNames;
-		module.exports = classNames;
-	} else if (true) {
-		// register as 'classnames', consistent with npm package name
-		!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function () {
-			return classNames;
-		}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-	} else {}
-}());
-
-
-/***/ }),
-
 /***/ "./resources/timer.svg":
 /*!*****************************!*\
   !*** ./resources/timer.svg ***!
@@ -917,7 +761,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/camunda-modeler-plugin-helpers/react.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (({
   styles = {},
@@ -1006,7 +850,7 @@ function _extends() { _extends = Object.assign ? Object.assign.bind() : function
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
 (() => {
 "use strict";
 /*!*************************!*\

@@ -6,6 +6,10 @@ All notable changes to the [Camunda Modeler Autosave Plugin](https://github.com/
 
 ___Note:__ Yet to be released changes appear here._
 
+## 0.4.0
+
+* `FEAT`: feat: use Settings API; remove custom overlay
+
 ## 0.3.1
 
 * `DEPS`: use stable version of `camunda-modeler-plugin-helpers`
