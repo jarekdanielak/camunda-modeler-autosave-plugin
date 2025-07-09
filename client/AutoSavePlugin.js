@@ -8,8 +8,8 @@
  * except in compliance with the MIT License.
  */
 
-import React, { useEffect, useState, useRef } from 'camunda-modeler-plugin-helpers/react';
-import { Fill } from 'camunda-modeler-plugin-helpers/components';
+import React, { useEffect, useState, useRef } from 'react';
+import Fill from 'camunda-modeler-plugin-helpers/components/Fill';
 
 import Icon from '../resources/timer.svg';
 

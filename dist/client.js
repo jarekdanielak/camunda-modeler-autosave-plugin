@@ -12,9 +12,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ AutoSavePlugin)
 /* harmony export */ });
-/* harmony import */ var camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/react */ "./node_modules/camunda-modeler-plugin-helpers/react.js");
-/* harmony import */ var camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/components */ "./node_modules/camunda-modeler-plugin-helpers/components.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/camunda-modeler-plugin-helpers/vendor/react.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var camunda_modeler_plugin_helpers_components_Fill__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! camunda-modeler-plugin-helpers/components/Fill */ "./node_modules/camunda-modeler-plugin-helpers/components/Fill.js");
 /* harmony import */ var _resources_timer_svg__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../resources/timer.svg */ "./resources/timer.svg");
 /**
  * Copyright Camunda Services GmbH and/or licensed to Camunda Services GmbH
@@ -51,10 +51,10 @@ function AutoSavePlugin(props) {
     settings,
     triggerAction
   } = props;
-  const [enabled, setEnabled] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
-  const [interval, setInterval] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)(5);
-  const [activeTab, setActiveTab] = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
-  const timer = (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const [enabled, setEnabled] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [interval, setInterval] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(5);
+  const [activeTab, setActiveTab] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+  const timer = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
 
   /**
     * Register the plugin settings to enable the user to configure
@@ -64,7 +64,7 @@ function AutoSavePlugin(props) {
     * - Settings in Camunda Modeler: https://docs.camunda.io/docs/next/components/modeler/desktop-modeler/settings/
     * - Settings API: https://github.com/camunda/camunda-modeler/blob/main/client/src/app/Settings.js
   */
-  (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const values = settings.register(pluginSettings);
     setEnabled(values['autoSavePlugin.enabled']);
     setValidInterval(values['autoSavePlugin.interval']);
@@ -83,7 +83,7 @@ function AutoSavePlugin(props) {
   /**
    * Use the `subscribe` API to hook into application events.
    */
-  (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     subscribe('app.activeTabChanged', ({
       activeTab
     }) => {
@@ -95,7 +95,7 @@ function AutoSavePlugin(props) {
       }
     });
   }, [subscribe]);
-  (0,camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (enabled && activeTab?.file?.path) {
       startTimer();
     }
@@ -140,13 +140,13 @@ function AutoSavePlugin(props) {
 
   // We can a <Fill> component to render into a specific slot in the Modeler UI
   // Here we render an icon indicating the auto-save is active
-  return /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components__WEBPACK_IMPORTED_MODULE_1__.Fill, {
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(camunda_modeler_plugin_helpers_components_Fill__WEBPACK_IMPORTED_MODULE_1__["default"], {
     slot: "status-bar__app",
     group: "1_autosave"
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
     className: "btn",
     title: "AutoSave enabled"
-  }, /*#__PURE__*/camunda_modeler_plugin_helpers_react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_resources_timer_svg__WEBPACK_IMPORTED_MODULE_2__["default"], null)));
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_resources_timer_svg__WEBPACK_IMPORTED_MODULE_2__["default"], null)));
 }
 const pluginSettings = {
   id: 'autoSavePlugin',
@@ -167,35 +167,20 @@ const pluginSettings = {
 
 /***/ }),
 
-/***/ "./node_modules/camunda-modeler-plugin-helpers/components.js":
-/*!*******************************************************************!*\
-  !*** ./node_modules/camunda-modeler-plugin-helpers/components.js ***!
-  \*******************************************************************/
+/***/ "./node_modules/camunda-modeler-plugin-helpers/components/Fill.js":
+/*!************************************************************************!*\
+  !*** ./node_modules/camunda-modeler-plugin-helpers/components/Fill.js ***!
+  \************************************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Fill: () => (/* binding */ Fill),
-/* harmony export */   Modal: () => (/* binding */ Modal),
-/* harmony export */   NotCompatible: () => (/* binding */ NotCompatible),
-/* harmony export */   Overlay: () => (/* binding */ Overlay),
-/* harmony export */   Section: () => (/* binding */ Section),
-/* harmony export */   ToggleSwitch: () => (/* binding */ ToggleSwitch)
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-if (!window.components) {
-  throw notCompatible('3.4');
-}
+/* harmony import */ var _helper_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../helper.js */ "./node_modules/camunda-modeler-plugin-helpers/helper.js");
+/* harmony import */ var _helper_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_helper_js__WEBPACK_IMPORTED_MODULE_0__);
 
-function notCompatible(requiredVersion) {
-  return new Error('Not compatible with Camunda Modeler < v' + requiredVersion);
-}
-
-const NotCompatible = function(requiredVersion) {
-  return function NotCompatibleComponent() {
-    throw notCompatible(requiredVersion);
-  };
-};
 
 /**
  * Fill component. Set `slot` to "toolbar" to include in the top toolbar.
@@ -206,7 +191,7 @@ const NotCompatible = function(requiredVersion) {
  *
  * @example
  *
- * import { Fill } from 'camunda-modeler-plugin-helpers/components';
+ * import Fill from 'camunda-modeler-plugin-helpers/components/Fill.js';
  *
  * function CustomFill(props) {
  *   return (
@@ -218,131 +203,33 @@ const NotCompatible = function(requiredVersion) {
  *   );
  * }
  */
-const Fill = window.components.Fill;
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ((0,_helper_js__WEBPACK_IMPORTED_MODULE_0__.returnOrThrow)(() => window.components?.Fill, '5.0'));
 
-/**
- * Modal component.
- *
- * @type {import('react').ComponentType<{ onClose: Function }>}
- *
- * @example
- *
- * import { Modal } from 'camunda-modeler-plugin-helpers/components';
- *
- * function CustomModal(props) {
- *   return (
- *    <Modal onClose={ props.onClose }>
- *      <Modal.Title>
- *        Custom Modal
- *      </Modal.Title>
- *      <Modal.Body>
- *        Hello world!
- *      </Modal.Body>
- *      <Modal.Footer>
- *        <button type="button" onClick={ props.onClose }>
- *          Close
- *        </button>
- *      </Modal.Footer>
- *    </Modal>
- *   );
- * }
- */
-const Modal = window.components.Modal;
+/***/ }),
 
-/**
- * Overlay component.
- *
- * @type {import('react').ComponentType<{ 
- *  onClose: Function, 
- *  anchor: Node, 
- *  offset?: { top?: number, bottom?: number, left?: number, right?: number }, 
- *  maxWidth?: number | string,
- *  maxHeight?: number | string,
- *  minWidth?: number | string,
- *  minHeight?: number | string
- * }>}
- *
- * @example
- * 
- * import { Overlay } from 'camunda-modeler-plugin-helpers/components';
- *
- * function CustomOverlay(props) {
- *   return (
- *    <Overlay onClose={ props.onClose } anchor={ props.btn_ref } offset={ props.anchor }>
- *      <Overlay.Title>
- *        Custom Modal
- *      </Overlay.Title>
- *      <Overlay.Body>
- *        Hello world!
- *      </Overlay.Body>
- *      <Overlay.Footer>
- *        <button type="button" onClick={ props.onClose }>
- *          Close
- *        </button>
- *      </Overlay.Footer>
- *    </Overlay>
- *   );
- * }
- */
- const Overlay = window.components.Overlay || NotCompatible('5.0');
+/***/ "./node_modules/camunda-modeler-plugin-helpers/helper.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/camunda-modeler-plugin-helpers/helper.js ***!
+  \***************************************************************/
+/***/ ((module) => {
 
- /**
- * Section component.
- *
- * @type {import('react').ComponentType<{ maxHeight: Number | String, relativePos: Boolean } }>}
- *
- * @example
- * 
- * import { Section } from 'camunda-modeler-plugin-helpers/components';
- *
- * function CustomSection(props) {
- *   return (
- *    <Section maxHeight="240px">
- *     <Section.Header>
- *       Custom section
- *     </Section.Header>
- *     <Section.Body>
- *       Hello world!
- *     </Section.Body>
- *     <Section.Actions>
- *      <button type="button" onClick={ props.onClose }>
- *        Close
- *      </button>
- *     </Section.Actions>
- *    </Section>
- *   );
- * }
- */
-const Section = window.components.Section || NotCompatible('5.0');
+function returnOrThrow(getter, minimalModelerVersion) {
+  let result;
+  try {
+    result = getter();
+  } catch (error) {}
 
- /**
- * ToggleSwitch component.
- *
- * @type {import('react').ComponentType<{ id: string, name: string, label?: string, switcherLabel?: string, description?: string }>}
- *
- * @example
- * 
- * import { ToggleSwitch } from 'camunda-modeler-plugin-helpers/components';
- *
- * function CustomToggle(props) {
- *   return (
- *    <Formik initialValues={ initialValues } onSubmit={ this.onSubmit }>
- *      {() => (
- *        <Form>
- *          <Field
- *            component={ ToggleSwitch }
- *            switcherLabel="Switcher label"
- *            id={ id }
- *            name={ name }
- *            description="Toggle description"
- *          />
- *        </Form>
- *       )}
- *    </Formik>
- *   );
- * }
- */
-const ToggleSwitch = window.components.ToggleSwitch || NotCompatible('5.0');
+  if (!result) {
+    throw new Error(`Not compatible with Camunda Modeler < ${minimalModelerVersion}`);
+  }
+
+  return result;
+}
+
+module.exports = {
+  returnOrThrow
+};
+
 
 /***/ }),
 
@@ -729,22 +616,21 @@ function getPluginsDirectory() {
 
 /***/ }),
 
-/***/ "./node_modules/camunda-modeler-plugin-helpers/react.js":
-/*!**************************************************************!*\
-  !*** ./node_modules/camunda-modeler-plugin-helpers/react.js ***!
-  \**************************************************************/
-/***/ ((module) => {
+/***/ "./node_modules/camunda-modeler-plugin-helpers/vendor/react.js":
+/*!*********************************************************************!*\
+  !*** ./node_modules/camunda-modeler-plugin-helpers/vendor/react.js ***!
+  \*********************************************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-if (!window.react) {
-  throw new Error('Not compatible with Camunda Modeler < 3.4');
-}
+const { returnOrThrow } = __webpack_require__(/*! ../helper.js */ "./node_modules/camunda-modeler-plugin-helpers/helper.js");
 
 /**
  * React object used by Camunda Modeler. Use it to create UI extension.
  *
  * @type {import('react')}
  */
-module.exports = window.react;
+module.exports = returnOrThrow(() => window.react, '3.4');
+
 
 /***/ }),
 
@@ -759,7 +645,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/camunda-modeler-plugin-helpers/react.js");
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/camunda-modeler-plugin-helpers/vendor/react.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 
